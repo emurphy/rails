@@ -5,7 +5,8 @@ require 'active_support/core_ext/benchmark'
 require 'active_record/connection_adapters/schema_cache'
 require 'active_record/connection_adapters/abstract/schema_dumper'
 require 'active_record/connection_adapters/abstract/schema_creation'
-require 'monitor'
+require 'arel/collectors/bind'
+require 'arel/collectors/sql_string'
 
 module ActiveRecord
   module ConnectionAdapters # :nodoc:
@@ -63,7 +64,6 @@ module ActiveRecord
       include DatabaseLimits
       include QueryCache
       include ActiveSupport::Callbacks
-      include MonitorMixin
       include ColumnDumper
 
       SIMPLE_INT = /\A\d+\z/
@@ -112,13 +112,20 @@ module ActiveRecord
         SchemaCreation.new self
       end
 
+      # this method must only be called while holding connection pool's mutex
       def lease
-        synchronize do
-          unless in_use
-            @in_use   = true
-            @last_use = Time.now
+        if in_use?
+          msg = 'Cannot lease connection, '
+          if @owner == Thread.current
+            msg << 'it is already leased by the current thread.'
+          else
+            msg << "it is already in use by a different thread: #{@owner}. " <<
+                   "Current thread: #{Thread.current}."
           end
+          raise ActiveRecordError, msg
         end
+
+        @owner = Thread.current
       end
 
       def schema_cache=(cache)
@@ -126,6 +133,7 @@ module ActiveRecord
         @schema_cache = cache
       end
 
+      # this method must only be called while holding connection pool's mutex
       def expire
         @in_use = false
       end
