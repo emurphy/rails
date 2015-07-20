@@ -5,8 +5,6 @@ require 'active_support/core_ext/benchmark'
 require 'active_record/connection_adapters/schema_cache'
 require 'active_record/connection_adapters/abstract/schema_dumper'
 require 'active_record/connection_adapters/abstract/schema_creation'
-require 'arel/collectors/bind'
-require 'arel/collectors/sql_string'
 
 module ActiveRecord
   module ConnectionAdapters # :nodoc:
