@@ -69,7 +69,7 @@ module ActiveRecord
       define_callbacks :checkout, :checkin
 
       attr_accessor :visitor, :pool
-      attr_reader :schema_cache, :last_use, :in_use, :logger
+      attr_reader :schema_cache, :last_use, :in_use, :logger, :owner
       alias :in_use? :in_use
 
       def self.type_cast_config_to_integer(config)
